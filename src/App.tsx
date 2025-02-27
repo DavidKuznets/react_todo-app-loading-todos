@@ -15,8 +15,8 @@ export const App: React.FC = () => {
   const [error, setError] = useState<string>('');
   const [newTodo, setNewTodo] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingTodos, setLoadingTodos] = useState<number[]>([]);
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
-  const [editingTodoId, setEditingTodoId] = useState<number | null>(null);
 
   const filteredTodos = todos.filter(todo => {
     if (filter === 'active') {
@@ -32,7 +32,7 @@ export const App: React.FC = () => {
 
   const handleAdd = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!newTodo) {
+    if (!newTodo.trim()) {
       return;
     }
 
@@ -51,14 +51,14 @@ export const App: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
-    setIsLoading(true);
+    setLoadingTodos(prev => [...prev, id]);
     try {
       await deleteTodo(id);
-      setTodos(todos.filter(todo => todo.id !== id));
+      setTodos(prevTodos => prevTodos.filter(todo => todo.id !== id));
     } catch {
       setError('Unable to delete todo');
     } finally {
-      setIsLoading(false);
+      setLoadingTodos(prev => prev.filter(todoId => todoId !== id));
     }
   };
 
@@ -130,12 +130,6 @@ export const App: React.FC = () => {
               filteredTodos.length === 0 && !isLoading ? 'none' : 'block',
           }}
         >
-          {isLoading && !editingTodoId && (
-            <div className="modal overlay is-active">
-              <div className="modal-background has-background-white-ter" />
-              <div className="loader" />
-            </div>
-          )}
           {filteredTodos.map(todo => (
             <div
               key={todo.id}
@@ -152,40 +146,9 @@ export const App: React.FC = () => {
                 />
               </label>
 
-              {editingTodoId === todo.id ? (
-                <form
-                  onSubmit={e => {
-                    e.preventDefault();
-                    setEditingTodoId(null);
-                  }}
-                >
-                  <input
-                    data-cy="TodoTitleField"
-                    type="text"
-                    className="todo__title-field"
-                    value={todo.title}
-                    onChange={event => {
-                      setTodos(
-                        todos.map(t =>
-                          t.id === todo.id
-                            ? { ...t, title: event.target.value }
-                            : t,
-                        ),
-                      );
-                    }}
-                    onBlur={() => setEditingTodoId(null)}
-                    autoFocus
-                  />
-                </form>
-              ) : (
-                <span
-                  data-cy="TodoTitle"
-                  className="todo__title"
-                  onDoubleClick={() => setEditingTodoId(todo.id)}
-                >
-                  {todo.title}
-                </span>
-              )}
+              <span data-cy="TodoTitle" className="todo__title">
+                {todo.title}
+              </span>
 
               <button
                 type="button"
@@ -196,11 +159,8 @@ export const App: React.FC = () => {
                 ×
               </button>
 
-              {isLoading && (
-                <div
-                  data-cy="TodoLoader"
-                  className={`modal overlay${isLoading ? ' is-active' : ''}`}
-                >
+              {loadingTodos.includes(todo.id) && (
+                <div data-cy="TodoLoader" className="modal overlay is-active">
                   <div className="modal-background has-background-white-ter" />
                   <div className="loader" />
                 </div>
