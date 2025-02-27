@@ -159,12 +159,13 @@ export const App: React.FC = () => {
                 ×
               </button>
 
-              {loadingTodos.includes(todo.id) && (
-                <div data-cy="TodoLoader" className="modal overlay is-active">
-                  <div className="modal-background has-background-white-ter" />
-                  <div className="loader" />
-                </div>
-              )}
+              <div
+                data-cy="TodoLoader"
+                className={`modal overlay ${loadingTodos.includes(todo.id) ? 'is-active' : ''}`}
+              >
+                <div className="modal-background has-background-white-ter" />
+                <div className="loader" />
+              </div>
             </div>
           ))}
         </section>
